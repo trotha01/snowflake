@@ -1,14 +1,21 @@
 package main
 
-import "github.com/trotha01/snowflake"
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/trotha01/snowflake"
+)
+
+var Resources snowflake.Resources
 
 func main() {
-	myOptions := snowflake.Options{
+	myOptions := snowflake.ResourceOptions{
 		Timeout:   "60",
 		RateLimit: "150",
 	}
 
-	resources := snowflake.Resources{
+	Resources := snowflake.Resources{
 		{
 			Path:    "/",
 			Get:     handler,
@@ -20,8 +27,11 @@ func main() {
 		},
 	}
 
-	snowflake.Run(resources)
+	gOptions := snowflake.GlobalOptions{Port: "2020", HealthcheckPort: "2023"}
+	snowflake.Run(Resources, gOptions)
 }
 
-func handler() {
+func handler(w http.ResponseWriter, r *http.Request) {
+	// return c.String(http.StatusOK, "Worked!")
+	fmt.Fprintf(w, "Hello")
 }
