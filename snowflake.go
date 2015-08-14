@@ -45,7 +45,7 @@ type GlobalOptions struct {
 }
 
 // Run starts the http server
-func Run(resources Resources, options GlobalOptions) {
+func Run(resources Resources, options *GlobalOptions) {
 	e := echo.New()
 	// e.Use(mWare)
 	for _, resource := range resources {
