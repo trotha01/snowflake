@@ -8,7 +8,8 @@ import (
 )
 
 func newResources() snowflake.Resources {
-	myOptions := snowflake.ResourceOptions{
+
+	someOptions := snowflake.ResourceOptions{
 		Timeout:   "60",
 		RateLimit: "150",
 	}
@@ -17,7 +18,7 @@ func newResources() snowflake.Resources {
 		{
 			Path:    "/",
 			Get:     handler,
-			Options: myOptions,
+			Options: someOptions,
 		},
 		{
 			Path: "/v3/endpoint",
@@ -32,10 +33,10 @@ func main() {
 	resources := newResources()
 
 	gOptions := snowflake.GlobalOptions{Port: "2020", HealthcheckPort: "2023"}
+
 	snowflake.Run(resources, &gOptions)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	// return c.String(http.StatusOK, "Worked!")
-	fmt.Fprintf(w, "Hello")
+	fmt.Fprintf(w, "Handled")
 }

@@ -20,7 +20,6 @@ func TestRoot(t *testing.T) {
 	if err != nil {
 		t.Fatal("Error with get request to /. Error: " + err.Error())
 	}
-	fmt.Printf("response: %+v\n", res)
 	body, err := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 	if err != nil {
@@ -33,9 +32,8 @@ func TestRoot(t *testing.T) {
 func TestEndpoint(t *testing.T) {
 	res, err := testClient.Post("/v3/endpoint", "", nil)
 	if err != nil {
-		t.Fatal("Error with get request to /. Error: " + err.Error())
+		t.Fatal("Error with get request to /v3/endpoint. Error: " + err.Error())
 	}
-	fmt.Printf("response: %+v\n", res)
 	body, err := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 	if err != nil {
