@@ -1,8 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/trotha01/snowflake"
 )
@@ -23,20 +26,40 @@ func newResources() snowflake.Resources {
 		{
 			Path: "/v3/endpoint",
 			Post: handler,
+			// Parameters
 		},
 	}
 
 	return resources
 }
 
-func main() {
-	resources := newResources()
+var swagify *bool
 
-	gOptions := snowflake.GlobalOptions{Port: "2020", HealthcheckPort: "2023"}
+func init() {
+	swagify = flag.Bool("swagify", false, "create a swag file for this server")
+}
+
+func main() {
+	flag.Parse()
+	resources := newResources()
+	sg := snowflake.SG{}
+	sg.Logger = log.New(os.Stdout, "", log.Lshortfile)
+
+	gOptions := snowflake.GlobalOptions{
+		SG:              sg,
+		Port:            "2020",
+		HealthcheckPort: "2023",
+	}
+
+	if *swagify {
+		snowflake.Swagify(resources)
+		return
+	}
 
 	snowflake.Run(resources, &gOptions)
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func handler(sg snowflake.SG, w http.ResponseWriter, r *http.Request) {
+	sg.Logger.Printf("handler log line")
 	fmt.Fprintf(w, "Handled")
 }

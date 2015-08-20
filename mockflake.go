@@ -5,19 +5,28 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 )
 
 type testRoundTripper struct {
 	resources Resources
 	recorder  *httptest.ResponseRecorder
+	sg        SG
 }
 
 func MockRun(r Resources, options *GlobalOptions) http.Client {
+
+	sg := SG{
+		Logger: log.New(os.Stdout, "", log.Lshortfile),
+	}
+
 	roundTripper := testRoundTripper{
 		resources: r,
 		recorder:  httptest.NewRecorder(),
+		sg:        sg,
 	}
 
 	testClient := http.Client{
@@ -35,11 +44,11 @@ func (trt testRoundTripper) RoundTrip(request *http.Request) (*http.Response, er
 		fmt.Printf("request path: %q\n", request.URL.Path)
 		if resource.Path == request.URL.Path {
 			if request.Method == "GET" {
-				resource.Get(w, request)
+				resource.Get(trt.sg, w, request)
 				return respFromRecorder(w), nil
 			}
 			if request.Method == "POST" {
-				resource.Post(w, request)
+				resource.Post(trt.sg, w, request)
 				return respFromRecorder(w), nil
 			}
 		}

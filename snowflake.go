@@ -1,20 +1,25 @@
 package snowflake
 
 import (
+	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo"
 )
 
 type Resources []Resource
 
-type Handler http.HandlerFunc
-
+// A object for logging and clients
 type SG struct {
-	Logger log.Logger
+	Logger *log.Logger
 	// Statsd client
 }
+
+// type Handler http.HandlerFunc
+type Handler func(SG, http.ResponseWriter, *http.Request)
 
 type Resource struct {
 	Path       string
@@ -38,6 +43,7 @@ type GlobalOptions struct {
 	RateLimit       string
 	Port            string
 	HealthcheckPort string
+	SG              SG
 }
 
 // Run starts the http server
@@ -45,25 +51,22 @@ func Run(resources Resources, options *GlobalOptions) {
 	e := echo.New()
 	for _, resource := range resources {
 		if resource.Get != nil {
-			e.Get(resource.Path, middlewareHandler(resource.Get))
-			// e.Get(resource.Path, http.HandlerFunc(resource.Get))
+			e.Get(resource.Path, options.SG.middlewareHandler(resource.Get))
 		}
 		if resource.Post != nil {
-			e.Post(resource.Path, middlewareHandler(resource.Post))
-			// e.Post(resource.Path, http.HandlerFunc(resource.Post))
+			e.Post(resource.Path, options.SG.middlewareHandler(resource.Post))
 		}
 		if resource.Delete != nil {
-			e.Delete(resource.Path, middlewareHandler(resource.Delete))
-			// e.Delete(resource.Path, http.HandlerFunc(resource.Delete))
+			e.Delete(resource.Path, options.SG.middlewareHandler(resource.Delete))
 		}
 	}
 
-	log.Printf("Running on port " + options.Port)
+	options.SG.Logger.Printf("Running on port " + options.Port)
 	go e.Run(":" + options.Port)
 
 	eHealth := echo.New()
 	eHealth.Get("/healthcheck", healthHandler)
-	log.Printf("Running Healthcheck on port " + options.HealthcheckPort)
+	options.SG.Logger.Printf("Running Healthcheck on port " + options.HealthcheckPort)
 	eHealth.Run(":" + options.HealthcheckPort)
 }
 
@@ -73,9 +76,41 @@ func healthHandler(c *echo.Context) error {
 }
 
 // turns a http handler into a echo handler
-func middlewareHandler(handler Handler) echo.HandlerFunc {
+func (sg SG) middlewareHandler(handler Handler) echo.HandlerFunc {
 	return func(c *echo.Context) error {
-		handler(c.Response().Writer(), c.Request())
+		sg.Logger.SetPrefix(strconv.Itoa(rand.Int()) + " ")
+		handler(sg, c.Response().Writer(), c.Request())
 		return nil
 	}
+}
+
+func Swagify(resources Resources) {
+	header := `
+swagger: '2.0'
+info:
+  title: Uber API
+  description: Move your app forward with the Uber API
+  version: "1.0.0"
+
+host: api.server.com
+schemes:
+  - https
+produces:
+  - application/jston
+paths:
+`
+	fmt.Printf(header)
+
+	for _, resource := range resources {
+		if resource.Get != nil {
+			fmt.Printf("  %s:\n", resource.Path)
+			fmt.Printf("    get:\n")
+		}
+		if resource.Post != nil {
+			fmt.Printf("  %s:\n", resource.Path)
+			fmt.Printf("    post:\n")
+		}
+
+	}
+
 }
